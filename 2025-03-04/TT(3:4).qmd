@@ -1,0 +1,96 @@
+---
+title: "Tidy Tuesday 3/4"
+author: "Adrian Huang"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+
+longbeach <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-03-04/longbeach.csv')
+
+```
+
+
+```{r}
+
+longbeach %>%
+  count(crossing) %>%
+  top_n(10, n) %>%
+  ggplot(aes(x = reorder(crossing, -n), y = n)) +
+  geom_col(fill = "blue") +
+  coord_flip() +
+  labs(title = "Top Locations for Captured Strays", x = "Crossing Street", y = "Count") +
+  theme_minimal()
+
+
+```
+
+
+```{r}
+longbeach %>%
+  filter(!is.na(crossing)) %>%
+  mutate(clean_street = str_extract(crossing, "^[^,]+")) %>%
+  count(clean_street, intake_condition) %>%
+  group_by(clean_street) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup() %>%
+  filter(clean_street %in% cleaned_streets$clean_street[1:10]) %>%
+  ggplot(aes(x = clean_street, y = prop, fill = intake_condition)) +
+  geom_col(position = "fill") +
+  coord_flip() +
+  labs(
+    title = "Proportion of Intake Conditions by Street",
+    x = "Street Name",
+    y = "Proportion of Cases"
+  ) +
+  theme_minimal()
+```
+```{r}
+longbeach %>%
+  filter(!is.na(crossing)) %>%
+  mutate(
+    clean_street = str_extract(crossing, "^[^,]+"),
+    intake_grouped = case_when(
+      intake_condition %in% c("normal") ~ "Normal",
+      intake_condition %in% c("under age/weight") ~ "Under Age/Weight",
+      intake_condition %in% c("ill mild", "ill moderatete", "ill severe") ~ "Ill",
+      intake_condition %in% c("injured  mild", "injured  moderate", "injured  severe") ~ "Injured",
+      TRUE ~ "Other"
+    )
+  ) %>%
+  count(clean_street, intake_grouped) %>%
+  group_by(clean_street) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup() %>%
+  filter(clean_street %in% cleaned_streets$clean_street[1:10]) %>%
+  ggplot(aes(x = clean_street, y = prop, fill = fct_reorder(intake_grouped, prop))) +
+  geom_col(position = "fill") +
+  coord_flip() +
+  labs(
+    title = "Long Beach Animal Shelter Capture Condition and Location",
+    x = "Street Name",
+    y = "Proportion of Cases",
+    fill = "Intake Condition"
+  ) +
+  scale_fill_manual(values = c("Normal" = "darkgreen", "Under Age/Weight"="blue", "Ill"="orange", "Injured" = "red",  "Other" = "gray")) +
+  theme_minimal()
+```
+
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+
+
+
+

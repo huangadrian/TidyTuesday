@@ -1,0 +1,76 @@
+---
+title: "Tidy Tuesday 1/27"
+author: "Adrian Huang"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+exped_tidy <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-01-21/exped_tidy.csv')
+peaks_tidy <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-01-21/peaks_tidy.csv')
+
+library(tidyverse)
+library(tidymodels)
+```
+
+```{r}
+exped_tidy %>%
+  group_by(YEAR) %>%
+  summarise(
+    total_deaths = sum(MDEATHS, na.rm = TRUE),
+    total_attempts = sum(TOTMEMBERS, na.rm = TRUE),
+    fatality_rate = (total_deaths / total_attempts) * 100
+  ) %>%
+  ggplot(aes(x = YEAR, y = fatality_rate)) +
+  geom_line(color = "red") +
+  labs(
+    title = "Fatality Rate Over Time",
+    x = "Year",
+    y = "Fatality Rate (%)"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+exped_data <- exped_tidy %>%
+  left_join(peaks_tidy, by = "PEAKID")  
+
+top_peaks <- exped_data %>%
+  count(PKNAME, sort = TRUE) %>%
+  top_n(12, n) %>%
+  pull(PKNAME)
+
+exped_data %>%
+  filter(PKNAME %in% top_peaks) %>%
+  group_by(PKNAME, YEAR) %>%
+  summarise(
+    total_deaths = sum(MDEATHS, na.rm = TRUE),
+    total_attempts = sum(TOTMEMBERS, na.rm = TRUE),
+    fatality_rate = (total_deaths / total_attempts) * 100
+  ) %>%
+  ggplot(aes(x = YEAR, y = fatality_rate)) +
+  geom_line(color = "red") +
+  facet_wrap(~PKNAME) +
+  labs(
+    title = "Fatality Rates (Top 12 Most Climbed Peaks 2020-2024)",
+    x = "Year",
+    y = "Fatality Rate (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(size = 8, face = "bold"), 
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.spacing = unit(1.5, "lines")
+  )
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
