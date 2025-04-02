@@ -36,26 +36,13 @@ longbeach %>%
 ```
 
 ```{r}
-longbeach %>%
+cleaned_streets <- longbeach %>%
   filter(!is.na(crossing)) %>%
   mutate(clean_street = str_extract(crossing, "^[^,]+")) %>%
-  count(clean_street, intake_condition) %>%
-  group_by(clean_street) %>%
-  mutate(prop = n / sum(n)) %>%
-  ungroup() %>%
-  filter(clean_street %in% cleaned_streets$clean_street[1:10]) %>%
-  ggplot(aes(x = clean_street, y = prop, fill = intake_condition)) +
-  geom_col(position = "fill") +
-  coord_flip() +
-  labs(
-    title = "Proportion of Intake Conditions by Street",
-    x = "Street Name",
-    y = "Proportion of Cases"
-  ) +
-  theme_minimal()
-```
+  count(clean_street) %>%
+  arrange(desc(n)) %>%
+  slice_head(n = 10)  # Select top 10 streets
 
-```{r}
 longbeach %>%
   filter(!is.na(crossing)) %>%
   mutate(
@@ -63,8 +50,8 @@ longbeach %>%
     intake_grouped = case_when(
       intake_condition %in% c("normal") ~ "Normal",
       intake_condition %in% c("under age/weight") ~ "Under Age/Weight",
-      intake_condition %in% c("ill mild", "ill moderatete", "ill severe") ~ "Ill",
-      intake_condition %in% c("injured  mild", "injured  moderate", "injured  severe") ~ "Injured",
+      intake_condition %in% c("ill mild", "ill moderate", "ill severe") ~ "Ill",  # Fixed typo
+      intake_condition %in% c("injured mild", "injured moderate", "injured severe") ~ "Injured",  # Fixed spaces
       TRUE ~ "Other"
     )
   ) %>%
@@ -72,7 +59,7 @@ longbeach %>%
   group_by(clean_street) %>%
   mutate(prop = n / sum(n)) %>%
   ungroup() %>%
-  filter(clean_street %in% cleaned_streets$clean_street[1:10]) %>%
+  filter(clean_street %in% cleaned_streets$clean_street) %>%  # Use the cleaned_streets object
   ggplot(aes(x = clean_street, y = prop, fill = fct_reorder(intake_grouped, prop))) +
   geom_col(position = "fill") +
   coord_flip() +
@@ -82,7 +69,7 @@ longbeach %>%
     y = "Proportion of Cases",
     fill = "Intake Condition"
   ) +
-  scale_fill_manual(values = c("Normal" = "darkgreen", "Under Age/Weight"="blue", "Ill"="orange", "Injured" = "red",  "Other" = "gray")) +
+  scale_fill_manual(values = c("Normal" = "darkgreen", "Under Age/Weight" = "blue", "Ill" = "orange", "Injured" = "red", "Other" = "gray")) +
   theme_minimal()
 ```
 
