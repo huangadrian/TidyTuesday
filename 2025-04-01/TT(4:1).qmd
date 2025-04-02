@@ -1,0 +1,75 @@
+---
+title: "Tidy TUesday 4/1"
+author: "Adrian Huang"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(ggplot2)
+library(dplyr)
+library(forcats)
+library(stringr)
+
+pokemon_df <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-04-01/pokemon_df.csv')
+
+```
+
+```{r}
+top_stats <- pokemon_df %>%
+  group_by(type_1) %>%
+  summarise(
+    avg_hp = mean(hp, na.rm = TRUE),
+    avg_attack = mean(attack, na.rm = TRUE),
+    avg_defense = mean(defense, na.rm = TRUE),
+    avg_speed = mean(speed, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = starts_with("avg_"), names_to = "stat", values_to = "value") %>%
+  group_by(stat) %>%
+  top_n(10, value) %>%
+  ungroup()
+
+top_attack <- pokemon_df %>%
+  group_by(type_1) %>%
+  summarise(avg_attack = mean(attack, na.rm = TRUE)) %>%
+  top_n(10, avg_attack) %>%
+  arrange(desc(avg_attack))
+
+top_attack$type_1 <- str_replace_all(top_attack$type_1, "-", " ") %>% str_to_title()
+
+
+ggplot(top_attack, aes(x = fct_reorder(type_1, desc(avg_attack)), y = avg_attack, fill = type_1)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 10 Primary Pokémon Types by Attack", x = "Primary Type", y = "Average Attack") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+
+top_attack_pokemon <- pokemon_df %>%
+  arrange(desc(attack)) %>%
+  slice(1:10) %>%
+  select(pokemon, attack, type_1)
+
+top_attack_pokemon$type_1 <- str_replace_all(top_attack_pokemon$type_1, "-", " ") %>% str_to_title()
+top_attack_pokemon$pokemon <- str_replace_all(top_attack_pokemon$pokemon, "-", " ") %>% str_to_title()
+
+ggplot(top_attack_pokemon, aes(x = fct_reorder(pokemon, desc(attack)), y = attack, fill = type_1)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 10 Individual Pokémon by Attack", x = "Pokémon", y = "Attack") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_discrete(name = "Primary Type") 
+```
+
+
+
